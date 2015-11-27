@@ -94,62 +94,97 @@ Player.prototype.collect = function() {
 // Update checks the player position
 // then calls collect() to pick gems
 Player.prototype.update = function() {
+    this.lose(false);
     this.collect();
 };
 
 // lose the player loses for different reasons
 // reachs the water or a conllosion with an enemy
 Player.prototype.lose = function(lose) {
+    //player reached the water
     if(this.y === -10){
         this.x = 202;
         this.y = 400;
         this.lives--;
-    }else if (lose) {
+    }// Else, if lose is true, player reached an enemy
+    else if (lose) {
         this.x = 202;
         this.y = 400;
         this.lives--;
     }
-    if (start && player.lives === 0) {
-        start = false;
-        ctx.fillStyle = "white";
+    // Prints "You lose" if player has 0 lives
+    if (this.lives === 0) {
+        ctx.fillStyle = 'white';
         ctx.fillText('You lose', 200, 300);
-
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = 'black';
         ctx.lineWidth = 2;
         ctx.strokeText('You lose', 200, 300);
+        return true;
     }
+    return false;
 };
 
 // Draw the player on the screen, required method for game
 // then calls lose() to check lives and lose position
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-    this.lose(false);
 };
 
 // Draw the player on the screen with the new selected image
 Player.prototype.changePlayer = function(newPlayer) {
     this.sprite = newPlayer;
     this.render();
-    console.log(this.sprite);
+};
+
+// Check whether there is a rock in the next position
+// returns true if the next position is clear
+Player.prototype.checkRock = function(rocksArray, x, y) {
+    for (var i = 0; i < rocksArray.length; i++) {
+        var auxgy = 0;
+        if (rocksArray[i].y === 60) {
+            auxgy = 72;
+        }else if (rocksArray[i].y === 143) {
+            auxgy = 154;
+        }else if (rocksArray[i].y === 226) {
+            auxgy = 236;
+        }
+        if(rocksArray[i].x === x && auxgy === y){
+            return false;
+        }
+    }
+
+    return true;
 };
 
 // handleInput moves the player's position, required method for game
 // Parameter: string, a string with the next move
-Player.prototype.handleInput = function(allowedKeys) {
+Player.prototype.handleInput = function(allowedKeys, rocksArray) {
     if(allowedKeys === 'left' && this.x > 0){
-        this.x = this.x - 101;
+        if (this.checkRock(rocksArray, this.x - 101, this.y)) {
+            this.x = this.x - 101;
+        }
     }else if (allowedKeys === 'up'  && this.y >= 72) {
-        this.y = this.y -82;
+        if (this.checkRock(rocksArray, this.x, this.y - 82)) {
+            this.y = this.y - 82;
+        }
     }else if (allowedKeys === 'right' && this.x < 404) {
-        this.x = this.x + 101;
+      if (this.checkRock(rocksArray, this.x + 101, this.y)) {
+          this.x = this.x + 101;
+      }
     }else if (allowedKeys === 'down'  && this.y < 400) {
-        this.y = this.y + 82;
+      if (this.checkRock(rocksArray, this.x, this.y + 82)) {
+          this.y = this.y + 82;
+      }
     }
 };
 
+// postionsY keeps the Y position for enemies, gems and rocks
 var postionsY = [60, 143, 226];
+
+// postionsX keeps the X position for enemies, gems and rocks
 var postionsX = [101, 202, 303, 404];
+
+// postionsY keeps the posible colors for gems
 var gems = ['images/gem-blue.png', 'images/gem-green.png', 'images/gem-orange.png'];
 
 // Now write your own gem class
@@ -181,23 +216,37 @@ Gem.prototype.update = function(show) {
     }
 };
 
-// putGems puts gem every 7 seconds ramdomly on the screen
+// puts a gem every 7 seconds ramdomly on the screen
 Gem.prototype.putGems = function (timeS, timeMS) {
     if (timeS > 0 && timeS % 7 === 0 && timeMS === 1) {
         gem.update(true);
     }
 };
 
+// Now write your own rock class
+// This class requires a render()
+var Rock = function () {
+    this.x = postionsX[Math.floor(Math.random() * 4)];
+    this.y = postionsY[Math.floor(Math.random() * 3)];
+    this.sprite = 'images/rock.png';
+};
+
+// Draw the rock on the screen
+Rock.prototype.render = function () {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+};
+
 // Now instantiate your objects.
 var player = new Player();
 var gem = new Gem();
 var allEnemies = new Array();
+var rocksArray = new Array();
 
 // Place all enemy objects in an array called allEnemies
-for (var i = 0; i < 4; i++) {
+for (var i = 0; i < 3; i++) {
     var bugEnemy = new Enemy();
     bugEnemy.x = 0;
-    bugEnemy.y = postionsY[Math.floor(Math.random() * 3)];
+    bugEnemy.y = postionsY[i];
     bugEnemy.setSpeed();
     allEnemies.push(bugEnemy);
 }
@@ -212,7 +261,7 @@ document.addEventListener('keyup', function(e) {
         40: 'down'
     };
     // e contains the pressed key
-    player.handleInput(allowedKeys[e.keyCode]);
+    player.handleInput(allowedKeys[e.keyCode], rocksArray);
 });
 
 // This listens for boy icon from the screen and changes the player image
@@ -238,4 +287,9 @@ $('#pinkgirl').click(function() {
 // This listens for princess icon from the screen and changes the player image
 $('#princess').click(function() {
     player.changePlayer('images/char-princess-girl.png');
+});
+
+// This listens for rock icon from the screen and adds one rock
+$('#rock').click(function() {
+    rocksArray.push(new Rock());
 });

@@ -25,6 +25,7 @@ var Engine = (function(global) {
         ctx = canvas.getContext('2d'),
         lastTime,
         start = false,
+        gameOver = false,
         timeMS = 0,
         timeS = 0,
         timeM = 0,
@@ -62,11 +63,19 @@ var Engine = (function(global) {
          */
         lastTime = now;
 
-        /* Use the browser's requestAnimationFrame function to call this
-         * function again as soon as the browser is able to draw another frame.
-         */
+        //check if player lose all his lives
+        gameOver = player.lose(false);
+
         if(start){
-          win.requestAnimationFrame(main);
+          /* Use the browser's requestAnimationFrame function to call this
+           * function again as soon as the browser is able to draw another frame.
+           */
+            win.requestAnimationFrame(main);
+        }
+
+        // if gameOver is true, stop the game
+        if (gameOver) {
+            start = false;
         }
     }
 
@@ -137,25 +146,34 @@ var Engine = (function(global) {
         player.render();
 
         gem.render();
+
+        rocksArray.forEach(function(rock) {
+            rock.render();
+        });
     }
 
+    /* This function is called by the render function and is called on each game
+     * tick, that makes the time illusion posible, this function paints the time
+     * in the screen.
+     */
     function paintTime() {
-        if (timeMS === 60) {
+        if (timeMS === 60) {//increase Seconds
             timeMS = 0;
             timeS++;
-        }else if (timeS === 60) {
+        }else if (timeS === 60) {//increase Minutes
             timeS = 0;
             timeM++;
-        }else if (timeM === 60) {
+        }else if (timeM === 60) {//increase Hours
             timeM = 0;
             timeH++;
         }
-        var auxTime = ':',
-            timeText = 'Time: ';
-        getText(timeText + timeH + auxTime + timeM + auxTime + timeS, 10, 580);
+        var timeText = 'Time: ';
+        timeText += timeH + ':' + timeM + ':' + timeS;
+        getText(timeText, 10, 580);
         timeMS++;
     }
 
+    // This function draws the area of the game
     function paintAreaGame() {
       /* This array holds the relative URL to the image used
        * for that particular row of the game level.
@@ -190,6 +208,7 @@ var Engine = (function(global) {
       }
     }
 
+    //This function draws the players information at the top of the screen
     function paintPlayerInfo() {
         for (var i = 0; i < player.lives; i++) {
             if (i === 0) {
@@ -208,6 +227,7 @@ var Engine = (function(global) {
         getText(strX + player.orange, 460, 30);
     }
 
+    // Draws the given text on the position x, y
     function getText(text, x, y) {
       ctx.fillStyle = "white";
       ctx.fillText(text, x, y);
@@ -227,7 +247,7 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy = new Enemy();
         });
-
+        rocksArray.length = 0;
         timeMS = 0;
         timeS = 0;
         timeM = 0;
@@ -236,6 +256,7 @@ var Engine = (function(global) {
         start = false;
     }
 
+    //checks posible collision between player and enemies
     function checkCollisions(){
         for (var i = 0; i < allEnemies.length; i++) {
             if ((allEnemies[i].x) <= player.x + 30 &&
@@ -243,13 +264,10 @@ var Engine = (function(global) {
                 (allEnemies[i].y)<= player.y + 30 &&
                 (allEnemies[i].y + 30) >= (player.y)) {
                   player.lose(true);
-                  console.log(player.lives);
-                  if (player.lives === 0) {
-                      start = false;
-                  }
             }
         }
     }
+
     /* Go ahead and load all of the images we know we're going to need to
      * draw our game level. Then set init as the callback method, so that when
      * all of these images are properly loaded our game will start.
@@ -281,13 +299,16 @@ var Engine = (function(global) {
      */
     global.ctx = ctx;
 
+    // This listens for start icon from the screen and starts the game
     $('#start').click(function() {
         start = true;
         if (player.lives === 0) {
-            player = new Player();
+            reset();
         }
         win.requestAnimationFrame(main);
     });
+
+    // This listens for reset icon from the screen and start over the game
     $('#reset').click(function() {
         reset();
     });
