@@ -11,6 +11,8 @@ Inside project P3 -- Classic-Arcade-Game there are 3 folders css, images & js al
 ## How to play Frogger
 Once you lunched the Frogger game in the browser, you will see in the left side the area game where the player can move up, down, left and right.
 
+![Frogger](https://github.com/fernandoawri/P3---Classic-Arcade-Game/blob/master/images/readme.JPG)
+
 ### Rules
 * In the right side you can start the game, reset the game and add a rock level.
 * The player can not move to a position where is a rock.
